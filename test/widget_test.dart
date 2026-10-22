@@ -87,4 +87,67 @@ void main() {
       expect(find.text('Total: PHP 311.00'), findsOneWidget);
     });
   });
+
+  group('CartScreen - add item form', () {
+    testWidgets('shows validation errors when the form is empty',
+        (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: CartScreen()));
+
+      await tester.tap(find.text('Add'));
+      await tester.pump();
+
+      expect(find.text('Item name is required'), findsOneWidget);
+      expect(find.text('Enter a price greater than 0'), findsOneWidget);
+      expect(find.textContaining('Items: 3'), findsOneWidget);
+    });
+
+    testWidgets('adds a new item and refreshes the summary', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: CartScreen()));
+
+      final fields = find.byType(TextField);
+      await tester.enterText(fields.at(0), 'Bread');
+      await tester.enterText(fields.at(1), '25');
+      await tester.pump();
+
+      await tester.tap(find.text('Add'));
+      await tester.pump();
+
+      expect(find.text('Bread'), findsOneWidget);
+      expect(find.text('PHP 25.00 each'), findsOneWidget);
+      expect(find.textContaining('Items: 4'), findsOneWidget);
+      // 311 + 25 = 336
+      expect(find.text('Total: PHP 336.00'), findsOneWidget);
+      // no leftover errors after a valid add
+      expect(find.text('Item name is required'), findsNothing);
+      expect(find.text('Enter a price greater than 0'), findsNothing);
+    });
+  });
+
+  group('CartScreen - checkboxes and clear checked', () {
+    testWidgets('checking an item updates the Got it counter', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: CartScreen()));
+
+      await tester.tap(find.byType(Checkbox).first);
+      await tester.pump();
+
+      expect(find.textContaining('Got it: 1'), findsOneWidget);
+      expect(find.textContaining('Got it: 0'), findsNothing);
+    });
+
+    testWidgets('Clear checked removes only the checked items', (tester) async {
+      await tester.pumpWidget(const MaterialApp(home: CartScreen()));
+
+      await tester.tap(find.byType(Checkbox).first); // check Rice
+      await tester.pump();
+      await tester.tap(find.text('Clear checked'));
+      await tester.pump();
+
+      expect(find.text('Rice'), findsNothing);
+      expect(find.text('Eggs'), findsOneWidget);
+      expect(find.text('Milk'), findsOneWidget);
+      expect(find.textContaining('Items: 2'), findsOneWidget);
+      // 8 x 12 + 95 x 1 = 191
+      expect(find.text('Total: PHP 191.00'), findsOneWidget);
+    });
+  });
 }
